@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>なかお商店管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f0f13;--surface:#1a1a2e;--border:#2a2a3e;--text:#f0ede8;--muted:#9ca3af;--dim:#6b7280;--green:#10b981;--blue:#60a5fa;--purple:#a78bfa;--yellow:#f59e0b;--red:#ef4444;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;padding-bottom:80px;}
+  .header{background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid var(--border);padding:18px 16px 0;position:sticky;top:0;z-index:100;}
+  .header h1{font-size:19px;font-weight:900;letter-spacing:-.5px;}
+  .header p{font-size:11px;color:var(--dim);margin-top:2px;}
+  .tabs{display:flex;gap:2px;margin-top:14px;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{padding:9px 13px;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:12px;font-weight:400;background:transparent;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;font-family:'Noto Sans JP',sans-serif;transition:all .2s;}
+  .tab-btn.active{background:#1e293b;color:var(--blue);font-weight:700;border-bottom-color:var(--blue);}
+  .body{padding:14px;max-width:640px;margin:0 auto;}
+  .page{display:none;}.page.active{display:block;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:11px;}
+  .section-title{font-size:14px;font-weight:800;margin-bottom:11px;color:#e2e8f0;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px;}
+  .stat-grid.three{grid-template-columns:1fr 1fr 1fr;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;border-left:3px solid;}
+  .stat-val{font-size:19px;font-weight:900;}
+  .stat-label{font-size:11px;color:var(--muted);margin-top:2px;}
+  input[type=text],input[type=number]{width:100%;background:#0f0f1a;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 11px;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s;}
+  input:focus{border-color:var(--blue);}
+  label{font-size:11px;color:var(--muted);margin-bottom:3px;display:block;}
+  .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .form-group{margin-bottom:7px;}
+  .btn{padding:8px 15px;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:13px;font-family:'Noto Sans JP',sans-serif;transition:opacity .15s,transform .1s;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-success{background:var(--green);color:#fff;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-ghost{background:var(--border);color:var(--muted);}
+  .btn-default{background:var(--border);color:var(--text);}
+  .btn-full{width:100%;padding:12px;font-size:14px;}
+  .product-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
+  .product-row:last-child{border-bottom:none;}
+  .product-name{font-weight:700;font-size:14px;}
+  .product-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .product-profit{font-size:11px;color:var(--green);margin-top:1px;}
+  .stock-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;}
+  .stock-ok{background:#10b98122;color:var(--green);}
+  .stock-low{background:#ef444422;color:var(--red);}
+  .btn-row{display:flex;gap:5px;}
+  .hist-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1e293b;}
+  .hist-row:last-child{border-bottom:none;}
+  .hist-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:5px;}
+  .tag-sell{background:#10b98122;color:var(--green);}
+  .tag-restock{background:#f59e0b22;color:var(--yellow);}
+  .preview-box{margin-top:11px;padding:11px;background:#0f0f1a;border-radius:8px;}
+  .preview-row{font-size:12px;display:flex;justify-content:space-between;margin-bottom:3px;}
+  #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--green);color:#fff;padding:9px 18px;border-radius:10px;font-weight:700;font-size:12px;z-index:999;box-shadow:0 4px 20px #0008;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast.error{background:var(--red);}
+  .edit-form{display:grid;gap:7px;}
+  .profit-hint{font-size:11px;color:var(--green);margin-top:3px;}
+  .empty-msg{color:var(--dim);font-size:13px;text-align:center;padding:20px 0;}
+  .sell-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);gap:10px;}
+  .sell-row:last-child{border-bottom:none;}
+  .sell-input{width:75px;text-align:center;}
+  .warn-box{background:#f59e0b18;border:1px solid #f59e0b44;border-radius:10px;padding:9px 13px;margin-bottom:11px;font-size:11px;color:var(--yellow);line-height:1.7;}
+  #graph-wrap{width:100%;overflow-x:auto;}
+  .graph-legend{display:flex;gap:14px;margin-bottom:8px;font-size:11px;}
+  .legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;}
+  .graph-tabs{display:flex;gap:6px;margin-bottom:10px;}
+  .graph-tab{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:600;}
+  .graph-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>&#x1F3EA; なかお商店管理システム</h1>
+  <p>仕入れ・売上・利益をかんたん管理</p>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">ダッシュボード</button>
+    <button class="tab-btn" onclick="switchTab(1)">商品管理</button>
+    <button class="tab-btn" onclick="switchTab(2)">売上記録</button>
+    <button class="tab-btn" onclick="switchTab(3)">仕入れ</button>
+    <button class="tab-btn" onclick="switchTab(4)">履歴</button>
+  </div>
+</div>
+<div class="body">
+  <div class="page active" id="page-0">
+    <div class="stat-grid" id="dash-stats"></div>
+    <div class="card">
+      <div class="section-title">&#x1F4C8; 売上・仕入れグラフ</div>
+      <div class="graph-tabs">
+        <button class="graph-tab active" onclick="setGraphMode('daily',this)">日別</button>
+        <button class="graph-tab" onclick="setGraphMode('weekly',this)">週別</button>
+        <button class="graph-tab" onclick="setGraphMode('monthly',this)">月別</button>
+      </div>
+      <div class="graph-legend">
+        <span><span class="legend-dot" style="background:#60a5fa"></span>売上</span>
+        <span><span class="legend-dot" style="background:#f59e0b"></span>仕入原価</span>
+        <span><span class="legend-dot" style="background:#10b981"></span>利益</span>
+      </div>
+      <div id="graph-wrap"><canvas id="sales-chart" height="200"></canvas></div>
+      <div id="graph-empty" style="display:none" class="empty-msg">記録がまだありません</div>
+    </div>
+    <div class="card">
+      <div class="section-title">&#x1F4E6; 商品在庫状況</div>
+      <div id="dash-products"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">&#x1F4CB; 直近の記録</div>
+      <div id="dash-history"></div>
+    </div>
+  </div>
+  <div class="page" id="page-1">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
+      <div class="section-title" style="margin-bottom:0">商品一覧</div>
+      <button class="btn btn-primary" onclick="toggleAddForm()">＋ 商品追加</button>
+    </div>
+    <div class="card" id="add-form" style="display:none;border-color:var(--blue)">
+      <div class="section-title">新規商品</div>
+      <div class="form-group"><label>商品名</label><input type="text" id="new-name" placeholder="例: コーラ"></div>
+      <div class="input-grid">
+        <div class="form-group"><label>仕入れ値（円）</label><input type="number" id="new-cost" placeholder="80" oninput="updateHint()"></div>
+        <div class="form-group"><label>売値（円）</label><input type="number" id="new-price" placeholder="100" oninput="updateHint()"></div>
+      </div>
+      <div class="profit-hint" id="new-hint"></div>
+      <p style="font-size:11px;color:var(--dim);margin-top:5px;line-height:1.6">※ 初期在庫は0。仕入れタブから在庫追加してください。</p>
+      <button class="btn btn-success btn-full" style="margin-top:9px" onclick="addProduct()">追加する</button>
+    </div>
+    <div id="product-list"></div>
+  </div>
+  <div class="page" id="page-2">
+    <div class="card">
+      <div class="section-title">&#x1F6D2; 在庫チェック → 売上記録</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">棚を数えた<b style="color:var(--text)">今の在庫数</b>を入力してください。前回記録との差分から売上を自動計算します。</p>
+      <div id="sell-inputs"></div>
+      <div class="preview-box" id="sell-preview" style="display:none"></div>
+      <button class="btn btn-success btn-full" style="margin-top:13px" onclick="submitSell()">&#x2705; 売上を記録する</button>
+    </div>
+  </div>
+  <div class="page" id="page-3">
+    <div class="card">
+      <div class="section-title">&#x1F4E5; 既存商品の仕入れ</div>
+      <div class="warn-box">&#x26A0;&#xFE0F; 仕入れ前に必ず「売上記録」タブで現時点の売上を先に記録してください。先に記録しないと在庫差分がズレます。</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:11px">仕入れた個数を入力。在庫に加算されます。</p>
+      <div id="restock-inputs"></div>
+      <button class="btn btn-full" style="margin-top:13px;background:var(--yellow);color:#1a1200;font-weight:800" onclick="submitRestock()">&#x1F4E5; 仕入れを記録する</button>
+    </div>
+    <div class="card" style="border-color:#a78bfa44">
+      <div class="section-title">&#x2728; 新規商品を仕入れ追加</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:11px">新しい商品の登録と初期在庫追加を同時にできます。</p>
+      <div class="form-group"><label>商品名</label><input type="text" id="ri-name" placeholder="例: グミ"></div>
+      <div class="input-grid">
+        <div class="form-group"><label>仕入れ値（円）</label><input type="number" id="ri-cost" placeholder="70" oninput="updateRestockHint()"></div>
+        <div class="form-group"><label>売値（円）</label><input type="number" id="ri-price" placeholder="90" oninput="updateRestockHint()"></div>
+      </div>
+      <div class="form-group"><label>仕入れ個数</label><input type="number" id="ri-qty" placeholder="12" oninput="updateRestockHint()"></div>
+      <div class="profit-hint" id="ri-hint"></div>
+      <button class="btn btn-full" style="margin-top:9px;background:var(--purple);color:#fff;font-weight:800" onclick="addAndRestock()">&#x2728; 登録＆仕入れ</button>
+    </div>
+  </div>
+  <div class="page" id="page-4">
+    <div class="stat-grid three" id="hist-stats"></div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+var STORE_P='nk2_products',STORE_H='nk2_history';
+var products=JSON.parse(localStorage.getItem(STORE_P)||'[]');
+var history=JSON.parse(localStorage.getItem(STORE_H)||'[]');
+var currentTab=0,sellValues={},restockValues={},editingId=null,showingAddForm=false,toastTimer=null,graphMode='daily';
+
+function save(){try{localStorage.setItem(STORE_P,JSON.stringify(products));localStorage.setItem(STORE_H,JSON.stringify(history));}catch(e){}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')save();});
+window.addEventListener('beforeunload',save);
+setInterval(save,30000);
+
+function yen(n){return'\u00a5'+n.toLocaleString();}
+
+function showToast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='show'+(type==='error'?' error':'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.className='';},2800);
+}
+
+function switchTab(i){
+  currentTab=i;
+  var pages=document.querySelectorAll('.page');
+  var btns=document.querySelectorAll('.tab-btn');
+  for(var j=0;j<pages.length;j++)pages[j].classList.toggle('active',j===i);
+  for(var j=0;j<btns.length;j++)btns[j].classList.toggle('active',j===i);
+  render();
+}
+
+function render(){
+  if(currentTab===0)renderDash();
+  if(currentTab===1)renderProducts();
+  if(currentTab===2)renderSell();
+  if(currentTab===3)renderRestock();
+  if(currentTab===4)renderHistory();
+}
+
+function setGraphMode(mode,btn){
+  graphMode=mode;
+  var tabs=document.querySelectorAll('.graph-tab');
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');
+  btn.classList.add('active');
+  drawGraph();
+}
+
+function groupHistory(mode){
+  var sells=history.filter(function(h){return h.type==='sell';});
+  var map={};
+  sells.forEach(function(h){
+    var d=new Date(h.dateISO||h.date);
+    var key;
+    if(mode==='daily'){
+      key=d.getFullYear()+'/'+(('0'+(d.getMonth()+1)).slice(-2))+'/'+(('0'+d.getDate()).slice(-2));
+    } else if(mode==='weekly'){
+      var day=d.getDay();
+      var mon=new Date(d);mon.setDate(d.getDate()-(day===0?6:day-1));
+      key=mon.getFullYear()+'/'+(('0'+(mon.getMonth()+1)).slice(-2))+'/'+(('0'+mon.getDate()).slice(-2));
+    } else {
+      key=d.getFullYear()+'/'+(('0'+(d.getMonth()+1)).slice(-2));
+    }
+    if(!map[key])map[key]={label:key,sales:0,cost:0,profit:0};
+    map[key].sales+=(h.sales||0);
+    map[key].cost+=(h.cost||0);
+    map[key].profit+=(h.profit||0);
+  });
+  return Object.values(map).sort(function(a,b){return a.label<b.label?-1:1;});
+}
+
+function niceStep(max){
+  if(max<=0)return 1;
+  var raw=max/5;
+  var mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  var n=raw/mag;
+  if(n<1.5)return mag;if(n<3)return 2*mag;if(n<7)return 5*mag;return 10*mag;
+}
+
+function drawGraph(){
+  var data=groupHistory(graphMode);
+  var empty=document.getElementById('graph-empty');
+  var wrap=document.getElementById('graph-wrap');
+  if(data.length===0){empty.style.display='block';wrap.style.display='none';return;}
+  empty.style.display='none';wrap.style.display='block';
+  var canvas=document.getElementById('sales-chart');
+  var W=canvas.parentElement.clientWidth||300;
+  var bw=Math.max(14,Math.min(36,Math.floor((W-60)/Math.max(data.length,1)/4)));
+  canvas.width=Math.max(W,data.length*(bw*4+8)+60);
+  canvas.height=220;
+  var ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  var padL=50,padR=10,padT=10,padB=50;
+  var chartW=canvas.width-padL-padR,chartH=canvas.height-padT-padB;
+  var maxVal=1;
+  data.forEach(function(d){maxVal=Math.max(maxVal,d.sales,d.cost,d.profit);});
+  var yStep=niceStep(maxVal);
+  var yMax=Math.ceil(maxVal/yStep)*yStep;
+  ctx.strokeStyle='#2a2a3e';ctx.lineWidth=1;
+  for(var v=0;v<=yMax;v+=yStep){
+    var y=padT+chartH*(1-v/yMax);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+chartW,y);ctx.stroke();
+    ctx.fillStyle='#6b7280';ctx.font='10px sans-serif';ctx.textAlign='right';
+    ctx.fillText(v>=1000?(Math.round(v/100)/10)+'k':v,padL-4,y+4);
+  }
+  var groupW=chartW/data.length;
+  data.forEach(function(d,i){
+    var gx=padL+groupW*i+groupW/2;
+    function drawBar(val,color,offset){
+      if(val<=0)return;
+      var bh=chartH*(val/yMax);
+      var bx=gx+offset-bw/2;
+      var by=padT+chartH-bh;
+      ctx.fillStyle=color;
+      ctx.fillRect(bx,by,bw,bh);
+    }
+    drawBar(d.sales,'#60a5fa99',-(bw+2));
+    drawBar(d.cost,'#f59e0b99',0);
+    drawBar(d.profit,'#10b98199',bw+2);
+    ctx.fillStyle='#9ca3af';ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(d.label.slice(5),gx,padT+chartH+16);
+  });
+  ctx.strokeStyle='#2a2a3e';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(padL,padT);ctx.lineTo(padL,padT+chartH);ctx.lineTo(padL+chartW,padT+chartH);ctx.stroke();
+}
+
+function renderDash(){
+  var sells=history.filter(function(h){return h.type==='sell';});
+  var totalProfit=sells.reduce(function(s,h){return s+h.profit;},0);
+  var totalSales=sells.reduce(function(s,h){return s+h.sales;},0);
+  var totalCost=sells.reduce(function(s,h){return s+(h.cost||0);},0);
+  var totalRestock=history.filter(function(h){return h.type==='restock';}).reduce(function(s,h){return s+(h.cost||0);},0);
+  document.getElementById('dash-stats').innerHTML=
+    '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-val" style="color:var(--green)">'+yen(totalProfit)+'</div><div class="stat-label">累計利益</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-val" style="color:var(--blue)">'+yen(totalSales)+'</div><div class="stat-label">累計売上</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--yellow)"><div class="stat-val" style="color:var(--yellow)">'+yen(totalCost)+'</div><div class="stat-label">売上原価</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--purple)"><div class="stat-val" style="color:var(--purple)">'+yen(totalRestock)+'</div><div class="stat-label">仕入れ総額</div></div>';
+  drawGraph();
+  document.getElementById('dash-products').innerHTML=products.length
+    ?products.map(function(p){return '<div class="product-row"><div><div class="product-name">'+p.name+'</div><div class="product-meta">仕入 '+yen(p.cost)+' → 売値 '+yen(p.price)+'　+'+yen(p.price-p.cost)+'</div></div><div style="text-align:right"><div style="font-weight:700;font-size:17px">'+p.stock+'<span style="font-size:11px;color:var(--muted)">個</span></div><span class="stock-badge '+(p.stock<3?'stock-low':'stock-ok')+'">'+(p.stock<3?'残少':'在庫OK')+'</span></div></div>';}).join('')
+    :'<div class="empty-msg">商品がありません</div>';
+  document.getElementById('dash-history').innerHTML=history.length
+    ?history.slice(0,5).map(function(h){return '<div class="hist-row"><div><div style="font-weight:700;font-size:13px">'+h.product+'<span class="hist-tag '+(h.type==='sell'?'tag-sell':'tag-restock')+'">'+(h.type==='sell'?'売上':'仕入れ')+'</span></div><div style="font-size:10px;color:var(--dim)">'+h.date+' '+h.time+'</div></div><div style="text-align:right">'+(h.type==='sell'?'<div style="color:var(--green);font-weight:700">+'+yen(h.profit)+'</div><div style="font-size:11px;color:var(--muted)">'+h.sold+'個売れた</div>':'<div style="color:var(--yellow);font-weight:700">+'+h.added+'個</div><div style="font-size:11px;color:var(--muted)">仕入れ</div>')+'</div></div>';}).join('')
+    :'<div class="empty-msg">まだ記録がありません</div>';
+}
+
+function renderProducts(){
+  document.getElementById('product-list').innerHTML=products.map(function(p){
+    if(editingId===p.id)return'<div class="card"><div class="edit-form"><div class="form-group"><label>商品名</label><input type="text" id="edit-name" value="'+p.name+'"></div><div class="input-grid"><div class="form-group"><label>仕入れ値</label><input type="number" id="edit-cost" value="'+p.cost+'"></div><div class="form-group"><label>売値</label><input type="number" id="edit-price" value="'+p.price+'"></div></div><p style="font-size:10px;color:var(--dim)">※在庫数は仕入れ・売上タブから変更してください。</p><div class="btn-row" style="margin-top:5px"><button class="btn btn-success" onclick="saveEdit('+p.id+')">保存</button><button class="btn btn-ghost" onclick="cancelEdit()">キャンセル</button></div></div></div>';
+    return'<div class="card"><div style="display:flex;align-items:center;justify-content:space-between"><div><div class="product-name">'+p.name+'</div><div class="product-meta">仕入 '+yen(p.cost)+' / 売値 '+yen(p.price)+' / 在庫 '+p.stock+'個</div><div class="product-profit">1個あたり +'+yen(p.price-p.cost)+'</div></div><div class="btn-row"><button class="btn btn-default" onclick="startEdit('+p.id+')">編集</button><button class="btn btn-danger" onclick="deleteProduct('+p.id+')">削除</button></div></div></div>';
+  }).join('')||'<div class="empty-msg">商品がありません。追加してください。</div>';
+}
+
+function renderSell(){
+  document.getElementById('sell-inputs').innerHTML=products.length
+    ?products.map(function(p){return'<div class="sell-row"><div><div class="product-name">'+p.name+'</div><div class="product-meta">記録上の在庫: <b style="color:var(--text)">'+p.stock+'個</b></div></div><div><label style="text-align:right">今の在庫数</label><input class="sell-input" type="number" min="0" placeholder="'+p.stock+'" value="'+(sellValues[p.id]!==undefined?sellValues[p.id]:'')+'" oninput="updateSellVal('+p.id+',this.value)"></div></div>';}).join('')
+    :'<div class="empty-msg">商品がありません。まず商品を追加してください。</div>';
+  updateSellPreview();
+}
+
+function updateSellVal(id,val){sellValues[id]=val;updateSellPreview();}
+
+function updateSellPreview(){
+  var rows=[];
+  products.forEach(function(p){
+    var v=sellValues[p.id];
+    if(v===undefined||v==='')return;
+    var cur=parseInt(v);if(isNaN(cur))return;
+    var sold=p.stock-cur;if(sold<=0)return;
+    rows.push({name:p.name,sold:sold,sales:sold*p.price,cost:sold*p.cost,profit:sold*(p.price-p.cost)});
+  });
+  var preview=document.getElementById('sell-preview');
+  if(rows.length===0){preview.style.display='none';return;}
+  var totalS=rows.reduce(function(s,r){return s+r.sales;},0);
+  var totalP=rows.reduce(function(s,r){return s+r.profit;},0);
+  preview.style.display='block';
+  preview.innerHTML='<div style="font-size:11px;color:var(--muted);margin-bottom:5px">プレビュー</div>'
+    +rows.map(function(r){return'<div class="preview-row"><span>'+r.name+' '+r.sold+'個</span><span style="color:var(--green)">+'+yen(r.profit)+'</span></div>';}).join('')
+    +'<div class="preview-row" style="margin-top:5px;padding-top:5px;border-top:1px solid #2a2a3e;font-weight:700"><span>売上合計</span><span style="color:var(--blue)">'+yen(totalS)+'</span></div>'
+    +'<div class="preview-row" style="font-weight:700"><span>利益合計</span><span style="color:var(--green)">'+yen(totalP)+'</span></div>';
+}
+
+function submitSell(){
+  var records=[];var updated=products.slice();var hasError=false;
+  products.forEach(function(p){
+    var v=sellValues[p.id];if(v===undefined||v==='')return;
+    var cur=parseInt(v);
+    if(isNaN(cur)){showToast(p.name+'の入力値が不正です','error');hasError=true;return;}
+    if(cur<0){showToast(p.name+'の在庫数は0以上','error');hasError=true;return;}
+    var sold=p.stock-cur;
+    if(sold>0){
+      var now=new Date();
+      records.push({id:Date.now()+p.id,type:'sell',dateISO:now.toISOString(),date:now.toLocaleDateString('ja-JP'),time:now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),product:p.name,sold:sold,sales:sold*p.price,cost:sold*p.cost,profit:sold*(p.price-p.cost)});
+    }
+    updated=updated.map(function(q){return q.id===p.id?Object.assign({},q,{stock:cur}):q;});
+  });
+  if(hasError)return;
+  if(records.length===0){showToast('売れた商品がありません','error');return;}
+  products=updated;
+  history=records.concat(history);
+  sellValues={};save();
+  showToast('記録完了！利益 '+yen(records.reduce(function(s,r){return s+r.profit;},0)));
+  renderSell();
+}
+
+function renderRestock(){
+  document.getElementById('restock-inputs').innerHTML=products.length
+    ?products.map(function(p){return'<div class="sell-row"><div><div class="product-name">'+p.name+'</div><div class="product-meta">現在の在庫: '+p.stock+'個</div></div><div><label style="text-align:right">仕入れ個数</label><input class="sell-input" type="number" min="0" placeholder="0" value="'+(restockValues[p.id]!==undefined?restockValues[p.id]:'')+'" oninput="updateRestockVal('+p.id+',this.value)"></div></div>';}).join('')
+    :'<div class="empty-msg">商品がありません</div>';
+}
+
+function updateRestockVal(id,val){restockValues[id]=val;}
+
+function submitRestock(){
+  var records=[];var updated=products.slice();
+  products.forEach(function(p){
+    var v=restockValues[p.id];if(!v||v==='')return;
+    var added=parseInt(v);if(isNaN(added)||added<=0)return;
+    var now=new Date();
+    records.push({id:Date.now()+p.id+99999,type:'restock',dateISO:now.toISOString(),date:now.toLocaleDateString('ja-JP'),time:now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),product:p.name,added:added,cost:added*p.cost});
+    updated=updated.map(function(q){return q.id===p.id?Object.assign({},q,{stock:q.stock+added}):q;});
+  });
+  if(records.length===0){showToast('仕入れ個数を入力してください','error');return;}
+  products=updated;history=records.concat(history);restockValues={};save();
+  showToast('仕入れ完了！（'+records.length+'商品）');renderRestock();
+}
+
+function updateRestockHint(){
+  var c=parseInt(document.getElementById('ri-cost').value);
+  var p=parseInt(document.getElementById('ri-price').value);
+  var q=parseInt(document.getElementById('ri-qty').value);
+  var h=document.getElementById('ri-hint');
+  if(!isNaN(c)&&!isNaN(p)&&!isNaN(q)&&q>0)h.textContent='利益: 1個 '+yen(p-c)+' / '+q+'個で '+yen((p-c)*q);
+  else if(!isNaN(c)&&!isNaN(p))h.textContent='利益: 1個あたり '+yen(p-c);
+  else h.textContent='';
+}
+
+function addAndRestock(){
+  var name=document.getElementById('ri-name').value.trim();
+  var cost=parseInt(document.getElementById('ri-cost').value);
+  var price=parseInt(document.getElementById('ri-price').value);
+  var qty=parseInt(document.getElementById('ri-qty').value);
+  if(!name){showToast('商品名を入力してください','error');return;}
+  if(isNaN(cost)||isNaN(price)){showToast('仕入れ値と売値を入力してください','error');return;}
+  if(isNaN(qty)||qty<=0){showToast('仕入れ個数を1以上入力してください','error');return;}
+  if(products.filter(function(p){return p.name===name;}).length>0){showToast('「'+name+'」はすでに登録済みです','error');return;}
+  products.push({id:Date.now(),name:name,cost:cost,price:price,stock:qty});
+  var now=new Date();
+  history=[{id:Date.now()+1,type:'restock',dateISO:now.toISOString(),date:now.toLocaleDateString('ja-JP'),time:now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}),product:name,added:qty,cost:qty*cost}].concat(history);
+  save();
+  ['ri-name','ri-cost','ri-price','ri-qty'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('ri-hint').textContent='';
+  showToast('「'+name+'」を登録＆'+qty+'個仕入れました');
+  renderRestock();
+}
+
+function renderHistory(){
+  var sells=history.filter(function(h){return h.type==='sell';});
+  var totalProfit=sells.reduce(function(s,h){return s+h.profit;},0);
+  var totalSales=sells.reduce(function(s,h){return s+h.sales;},0);
+  var totalItems=sells.reduce(function(s,h){return s+h.sold;},0);
+  document.getElementById('hist-stats').innerHTML=
+    '<div class="stat-card" style="border-left-color:var(--green)"><div class="stat-val" style="color:var(--green);font-size:15px">'+yen(totalProfit)+'</div><div class="stat-label">総利益</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-val" style="color:var(--blue);font-size:15px">'+yen(totalSales)+'</div><div class="stat-label">総売上</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--purple)"><div class="stat-val" style="color:var(--purple);font-size:15px">'+totalItems+'</div><div class="stat-label">総販売数</div></div>';
+  document.getElementById('hist-list').innerHTML=history.length
+    ?history.map(function(h){return'<div class="card" style="padding:11px 14px"><div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-weight:800;font-size:13px">'+h.product+'<span class="hist-tag '+(h.type==='sell'?'tag-sell':'tag-restock')+'">'+(h.type==='sell'?'売上':'仕入れ')+'</span></div><div style="font-size:11px;color:var(--dim)">'+h.date+' '+h.time+'</div></div><div style="text-align:right">'+(h.type==='sell'?'<div style="color:var(--green);font-weight:800;font-size:15px">+'+yen(h.profit)+'</div><div style="font-size:11px;color:var(--muted)">'+h.sold+'個・売上'+yen(h.sales)+'</div>':'<div style="color:var(--yellow);font-weight:800;font-size:15px">+'+h.added+'個</div><div style="font-size:11px;color:var(--muted)">仕入れ '+yen(h.cost||0)+'</div>')+'</div></div></div>';}).join('')
+    :'<div class="empty-msg">まだ記録がありません。</div>';
+}
+
+function toggleAddForm(){
+  showingAddForm=!showingAddForm;
+  document.getElementById('add-form').style.display=showingAddForm?'block':'none';
+  if(!showingAddForm){['new-name','new-cost','new-price'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('new-hint').textContent='';}
+  document.querySelector('[onclick="toggleAddForm()"]').textContent=showingAddForm?'キャンセル':'＋ 商品追加';
+}
+function updateHint(){
+  var c=parseInt(document.getElementById('new-cost').value),p=parseInt(document.getElementById('new-price').value);
+  document.getElementById('new-hint').textContent=(!isNaN(c)&&!isNaN(p))?'利益：1個あたり '+yen(p-c):'';
+}
+function addProduct(){
+  var name=document.getElementById('new-name').value.trim();
+  var cost=parseInt(document.getElementById('new-cost').value);
+  var price=parseInt(document.getElementById('new-price').value);
+  if(!name||isNaN(cost)||isNaN(price)){showToast('全項目を入力してください','error');return;}
+  if(products.filter(function(p){return p.name===name;}).length>0){showToast('「'+name+'」はすでに登録済みです','error');return;}
+  products.push({id:Date.now(),name:name,cost:cost,price:price,stock:0});
+  save();toggleAddForm();showToast('「'+name+'」を追加しました');renderProducts();
+}
+function deleteProduct(id){
+  if(!confirm('削除しますか？'))return;
+  products=products.filter(function(p){return p.id!==id;});save();showToast('削除しました','error');render();
+}
+function startEdit(id){editingId=id;renderProducts();}
+function cancelEdit(){editingId=null;renderProducts();}
+function saveEdit(id){
+  var name=document.getElementById('edit-name').value.trim();
+  var cost=parseInt(document.getElementById('edit-cost').value);
+  var price=parseInt(document.getElementById('edit-price').value);
+  if(!name||isNaN(cost)||isNaN(price)){showToast('全項目を入力してください','error');return;}
+  products=products.map(function(p){return p.id===id?Object.assign({},p,{name:name,cost:cost,price:price}):p;});
+  editingId=null;save();showToast('更新しました');render();
+}
+
+render();
+</script>
+</body>
+</html>
